@@ -1,0 +1,44 @@
+# SteveGet.com — Robots.txt
+# Last updated: 2026-03-19
+
+Sitemap: https://www.steveget.com/sitemap.xml
+Sitemap: https://www.steveget.com/sitemap.xml.gz
+
+User-agent: *
+Allow: /
+Disallow: /admin.php
+Disallow: /admin-notes/
+Disallow: /includes/
+Disallow: /assets/js/
+Disallow: /*.bak$
+
+# Block aggressive crawlers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: ShopWiki
+Disallow: /
+
+User-agent: magpie-crawler
+Disallow: /
+
+User-agent: SemrushBot-SA
+Disallow: /
+
+User-agent: SemrushBot-BA
+Disallow: /
+
+User-agent: SemrushBot-SI
+Disallow: /
+
+User-agent: SemrushBot-SWA
+Disallow: /
+
+User-agent: SemrushBot-CT
+Disallow: /
+
+User-agent: SemrushBot-BM
+Disallow: /
+
+User-agent: SemrushBot-SEOAB
+Disallow: /
