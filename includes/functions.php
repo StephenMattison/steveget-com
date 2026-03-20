@@ -193,16 +193,39 @@ function render_steve_badge(string $photo = ''): string {
 }
 
 /**
- * Render award badge.
+ * Render badge (Steve's pick designation).
+ */
+function render_badge(string $badge): string {
+    $classes = [
+        "Steve's #1 Pick"  => 'award--overall',
+        'Best Budget Pick' => 'award--budget',
+        'Best Value Pick'  => 'award--value',
+    ];
+    $cls = $classes[$badge] ?? 'award--overall';
+    return '<span class="award ' . $cls . '">' . e($badge) . '</span>';
+}
+
+/**
+ * Render real third-party award (only shown when not empty).
  */
 function render_award(string $award): string {
-    $classes = [
-        'Best Overall' => 'award--overall',
-        'Best Budget'  => 'award--budget',
-        'Best Value'   => 'award--value',
-    ];
-    $cls = $classes[$award] ?? 'award--overall';
-    return '<span class="award ' . $cls . '">' . e($award) . '</span>';
+    if (empty($award)) return '';
+    return '<span class="award award--third-party">' . e($award) . '</span>';
+}
+
+/**
+ * Render YouTube video embed (only shown when URL provided).
+ */
+function render_video(string $url): string {
+    if (empty($url)) return '';
+    // Extract video ID from various YouTube URL formats
+    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/', $url, $m)) {
+        $id = $m[1];
+        return '<div class="video-embed" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:1.5rem 0;border-radius:8px;">
+      <iframe src="https://www.youtube-nocookie.com/embed/' . e($id) . '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen loading="lazy" title="Steve\'s Video Review"></iframe>
+    </div>';
+    }
+    return '';
 }
 
 /**
@@ -211,10 +234,10 @@ function render_award(string $award): string {
 function render_product_card(array $p): string {
     $cat = get_category($p['category']);
     return '<article class="product-card">
-    <a href="/product.php?slug=' . e($p['slug']) . '" class="product-card__link">
+    <a href="/product/' . e($p['slug']) . '.html" class="product-card__link">
       <div class="product-card__image-wrap">
-        <img src="' . e($p['image']) . '" alt="' . e($p['name']) . ' — ' . e($p['award']) . ' ' . e($cat['name']) . ' pick ' . SITE_YEAR . '" loading="lazy" width="400" height="300" class="product-card__img">
-        ' . render_award($p['award']) . '
+        <img src="' . e($p['image']) . '" alt="' . e($p['name']) . ' — ' . e($p['badge']) . ' ' . e($cat['name']) . ' pick ' . SITE_YEAR . '" loading="lazy" width="400" height="300" class="product-card__img">
+        ' . render_badge($p['badge']) . '
       </div>
       <div class="product-card__body">
         ' . render_steve_badge($p['steve_photo']) . '
