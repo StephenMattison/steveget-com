@@ -789,6 +789,60 @@ ul, ol { list-style: none; }
   color: rgba(0,0,0,0.6);
 }
 
+/* Secondary retailer buttons — "Also available at" row */
+.buy-buttons__alt {
+  text-align: center;
+  margin-top: var(--sp-3);
+}
+.buy-buttons__alt-label {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  margin-bottom: var(--sp-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--fw-medium);
+}
+.buy-buttons__alt-row {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: center;
+}
+.btn-buy-alt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  transition: background var(--transition), transform var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+.btn-buy-alt:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.btn-buy-alt--walmart { background: #0071dc; color: #fff; }
+.btn-buy-alt--walmart:hover { background: #005bb5; }
+.btn-buy-alt--bestbuy { background: #0046be; color: #fff; }
+.btn-buy-alt--bestbuy:hover { background: #003594; }
+.btn-buy-alt--target { background: #cc0000; color: #fff; }
+.btn-buy-alt--target:hover { background: #a30000; }
+
+/* Third-party award badge */
+.award--third-party {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #78350f;
+  font-size: var(--fs-xs);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-weight: var(--fw-semibold);
+  display: inline-block;
+  margin-top: var(--sp-2);
+}
+
 /* Sticky buy bar on mobile */
 .sticky-buy-bar {
   display: none;

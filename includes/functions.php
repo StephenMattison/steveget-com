@@ -305,12 +305,12 @@ function render_specs(array $specs): string {
 }
 
 /**
- * Render buy buttons — Amazon always shown, Walmart/Best Buy only when URL provided.
+ * Render buy buttons — Amazon primary, others secondary row below.
  */
 function render_buy_button(array $p): string {
     $html = '<div class="buy-buttons">';
 
-    // Amazon (always shown if ASIN exists)
+    // Amazon — PRIMARY button (large, prominent)
     if (!empty($p['asin'])) {
         $html .= '<a href="' . amazon_link($p['asin']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy btn-buy--amazon">
         <span class="btn-buy__icon">🛒</span>
@@ -319,31 +319,32 @@ function render_buy_button(array $p): string {
       </a>';
     }
 
-    // Walmart (shown when URL provided)
+    // Secondary retailers — smaller buttons in a row
+    $secondary = [];
+
     if (!empty($p['walmart_url'])) {
-        $html .= '<a href="' . e($p['walmart_url']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy btn-buy--walmart">
-        <span class="btn-buy__icon">🏪</span>
-        <span class="btn-buy__text">Buy at Walmart</span>
-        <span class="btn-buy__sub">Free shipping on $35+</span>
+        $secondary[] = '<a href="' . e($p['walmart_url']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy-alt btn-buy-alt--walmart">
+        <span class="btn-buy-alt__text">Walmart</span>
       </a>';
     }
 
-    // Best Buy (shown when URL provided)
     if (!empty($p['bestbuy_url'])) {
-        $html .= '<a href="' . e($p['bestbuy_url']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy btn-buy--bestbuy">
-        <span class="btn-buy__icon">🏷️</span>
-        <span class="btn-buy__text">Buy at Best Buy</span>
-        <span class="btn-buy__sub">Free shipping & returns</span>
+        $secondary[] = '<a href="' . e($p['bestbuy_url']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy-alt btn-buy-alt--bestbuy">
+        <span class="btn-buy-alt__text">Best Buy</span>
       </a>';
     }
 
-    // Target (shown when URL provided)
     if (!empty($p['target_url'])) {
-        $html .= '<a href="' . e($p['target_url']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy btn-buy--target">
-        <span class="btn-buy__icon">🎯</span>
-        <span class="btn-buy__text">Buy at Target</span>
-        <span class="btn-buy__sub">Free shipping on $35+</span>
+        $secondary[] = '<a href="' . e($p['target_url']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy-alt btn-buy-alt--target">
+        <span class="btn-buy-alt__text">Target</span>
       </a>';
+    }
+
+    if (!empty($secondary)) {
+        $html .= '<div class="buy-buttons__alt">
+        <span class="buy-buttons__alt-label">Also available at</span>
+        <div class="buy-buttons__alt-row">' . implode('', $secondary) . '</div>
+      </div>';
     }
 
     $html .= '</div>';
