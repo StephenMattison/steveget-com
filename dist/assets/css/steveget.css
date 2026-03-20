@@ -779,6 +779,8 @@ ul, ol { list-style: none; }
 .btn-buy--walmart:hover { background: #005bb5; color: #fff; }
 .btn-buy--bestbuy { background: #0046be; color: #fff; }
 .btn-buy--bestbuy:hover { background: #003594; color: #fff; }
+.btn-buy--target { background: #cc0000; color: #fff; }
+.btn-buy--target:hover { background: #a30000; color: #fff; }
 .btn-buy__icon { font-size: var(--fs-xl); }
 .btn-buy__text { font-size: var(--fs-lg); }
 .btn-buy__sub {

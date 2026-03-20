@@ -337,6 +337,15 @@ function render_buy_button(array $p): string {
       </a>';
     }
 
+    // Target (shown when URL provided)
+    if (!empty($p['target_url'])) {
+        $html .= '<a href="' . e($p['target_url']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy btn-buy--target">
+        <span class="btn-buy__icon">🎯</span>
+        <span class="btn-buy__text">Buy at Target</span>
+        <span class="btn-buy__sub">Free shipping on $35+</span>
+      </a>';
+    }
+
     $html .= '</div>';
     return $html;
 }
