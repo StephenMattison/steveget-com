@@ -144,7 +144,7 @@ require_once __DIR__ . '/includes/header.php';
 
     <!-- Final Buy CTA -->
     <h2>Where to Buy</h2>
-    <p>The <?= e($product['name']) ?> is available on Amazon with free Prime shipping. Steve recommends buying from Amazon for the best return policy and price.</p>
+    <p>The <?= e($product['name']) ?> is available from these trusted retailers. Pick the one you prefer — same great product, your choice of store.</p>
     <?= render_buy_button($product) ?>
 
     <!-- Affiliate Disclosure -->

@@ -305,12 +305,38 @@ function render_specs(array $specs): string {
 }
 
 /**
- * Render Amazon "Buy Now" button.
+ * Render buy buttons — Amazon always shown, Walmart/Best Buy only when URL provided.
  */
 function render_buy_button(array $p): string {
-    return '<a href="' . amazon_link($p['asin']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy">
-    <span class="btn-buy__icon">🛒</span>
-    <span class="btn-buy__text">Buy on Amazon — $' . e($p['price']) . '</span>
-    <span class="btn-buy__sub">Free shipping with Prime</span>
-  </a>';
+    $html = '<div class="buy-buttons">';
+
+    // Amazon (always shown if ASIN exists)
+    if (!empty($p['asin'])) {
+        $html .= '<a href="' . amazon_link($p['asin']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy btn-buy--amazon">
+        <span class="btn-buy__icon">🛒</span>
+        <span class="btn-buy__text">Buy on Amazon — $' . e($p['price']) . '</span>
+        <span class="btn-buy__sub">Free shipping with Prime</span>
+      </a>';
+    }
+
+    // Walmart (shown when URL provided)
+    if (!empty($p['walmart_url'])) {
+        $html .= '<a href="' . e($p['walmart_url']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy btn-buy--walmart">
+        <span class="btn-buy__icon">🏪</span>
+        <span class="btn-buy__text">Buy at Walmart</span>
+        <span class="btn-buy__sub">Free shipping on $35+</span>
+      </a>';
+    }
+
+    // Best Buy (shown when URL provided)
+    if (!empty($p['bestbuy_url'])) {
+        $html .= '<a href="' . e($p['bestbuy_url']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy btn-buy--bestbuy">
+        <span class="btn-buy__icon">🏷️</span>
+        <span class="btn-buy__text">Buy at Best Buy</span>
+        <span class="btn-buy__sub">Free shipping & returns</span>
+      </a>';
+    }
+
+    $html .= '</div>';
+    return $html;
 }

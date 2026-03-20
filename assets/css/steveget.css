@@ -743,8 +743,15 @@ ul, ol { list-style: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   BUY NOW BUTTON (Amazon)
+   BUY NOW BUTTONS (Amazon, Walmart, Best Buy)
    ═══════════════════════════════════════════════════════════════ */
+.buy-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 400px;
+  margin: var(--sp-6) auto;
+}
 .btn-buy {
   display: flex;
   flex-direction: column;
@@ -752,8 +759,6 @@ ul, ol { list-style: none; }
   justify-content: center;
   gap: var(--sp-1);
   width: 100%;
-  max-width: 400px;
-  margin: var(--sp-6) auto;
   padding: var(--sp-5) var(--sp-8);
   background: var(--c-amazon);
   color: var(--c-amazon-text);
@@ -765,11 +770,15 @@ ul, ol { list-style: none; }
   box-shadow: var(--shadow-md);
 }
 .btn-buy:hover {
-  background: var(--c-amazon-hover);
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  color: var(--c-amazon-text);
 }
+.btn-buy--amazon { background: var(--c-amazon); color: var(--c-amazon-text); }
+.btn-buy--amazon:hover { background: var(--c-amazon-hover); color: var(--c-amazon-text); }
+.btn-buy--walmart { background: #0071dc; color: #fff; }
+.btn-buy--walmart:hover { background: #005bb5; color: #fff; }
+.btn-buy--bestbuy { background: #0046be; color: #fff; }
+.btn-buy--bestbuy:hover { background: #003594; color: #fff; }
 .btn-buy__icon { font-size: var(--fs-xl); }
 .btn-buy__text { font-size: var(--fs-lg); }
 .btn-buy__sub {
