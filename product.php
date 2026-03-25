@@ -83,7 +83,9 @@ require_once __DIR__ . '/includes/header.php';
           <span>Category: <a href="/category/<?= e($cat['slug']) ?>.html"><?= e($cat['name']) ?></a></span>
         </div>
 
+        <?php if (!empty($product['price'])): ?>
         <p class="review-hero__price">$<?= e($product['price']) ?></p>
+        <?php endif; ?>
 
         <!-- Steve Badge -->
         <?= render_steve_badge($product['steve_photo']) ?>
@@ -183,7 +185,7 @@ if (!empty($related)):
 <!-- Sticky Buy Bar (Mobile) -->
 <div class="sticky-buy-bar" id="sticky-buy-bar">
   <a href="<?= amazon_link($product['asin']) ?>" target="_blank" rel="nofollow noopener sponsored" class="btn-buy">
-    <span class="btn-buy__text">Buy on Amazon — $<?= e($product['price']) ?></span>
+    <span class="btn-buy__text">Buy on Amazon<?= !empty($product['price']) ? ' — $' . e($product['price']) : '' ?></span>
   </a>
 </div>
 

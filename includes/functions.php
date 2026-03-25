@@ -245,7 +245,7 @@ function render_product_card(array $p): string {
         <p class="product-card__desc">' . e(mb_strimwidth($p['description'], 0, 120, '…')) . '</p>
         <div class="product-card__meta">
           ' . render_stars($p['rating']) . '
-          <span class="product-card__price">$' . e($p['price']) . '</span>
+          ' . (!empty($p['price']) ? '<span class="product-card__price">$' . e($p['price']) . '</span>' : '') . '
         </div>
       </div>
     </a>
@@ -312,9 +312,10 @@ function render_buy_button(array $p): string {
 
     // Amazon — PRIMARY button (large, prominent)
     if (!empty($p['asin'])) {
+        $price_text = !empty($p['price']) ? ' — $' . e($p['price']) : '';
         $html .= '<a href="' . amazon_link($p['asin']) . '" target="_blank" rel="nofollow noopener sponsored" class="btn-buy btn-buy--amazon">
         <span class="btn-buy__icon">🛒</span>
-        <span class="btn-buy__text">Buy on Amazon — $' . e($p['price']) . '</span>
+        <span class="btn-buy__text">Buy on Amazon' . $price_text . '</span>
         <span class="btn-buy__sub">Free shipping with Prime</span>
       </a>';
     }
