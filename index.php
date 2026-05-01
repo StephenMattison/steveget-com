@@ -29,6 +29,8 @@ require_once __DIR__ . '/includes/header.php';
     <div class="hero__badge">
       🔥 Updated for <?= SITE_YEAR ?> — <?= count($products) ?> products reviewed
     </div>
+    <br>
+    <a href="#featured" class="hero__cta">See Steve's Top Picks →</a>
   </div>
 </section>
 
@@ -62,7 +64,7 @@ require_once __DIR__ . '/includes/header.php';
 </section>
 
 <!-- ═══════════════ FEATURED PICKS ═══════════════ -->
-<section class="section section--alt">
+<section class="section section--alt" id="featured">
   <div class="container">
     <div class="section__header">
       <h2 class="section__title">Steve's Top Picks for <?= SITE_YEAR ?></h2>

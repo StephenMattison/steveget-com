@@ -93,7 +93,7 @@ if (is_dir($srcDir . '/assets')) {
     echo "  OK: assets/\n";
 }
 
-$staticFiles = ['favicon.ico', 'robots.txt', 'sitemap.xml', 'sitemap.xml.gz'];
+$staticFiles = ['favicon.ico', 'robots.txt', 'sitemap.xml', 'sitemap.xml.gz', '_headers', '_redirects'];
 foreach ($staticFiles as $f) {
     if (file_exists($srcDir . '/' . $f)) {
         copy($srcDir . '/' . $f, $distDir . '/' . $f);
