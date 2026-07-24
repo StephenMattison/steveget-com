@@ -18,21 +18,27 @@ define('DEFAULT_META_TITLE',       'Best Products ' . SITE_YEAR . ' — Tested &
 define('DEFAULT_META_DESC',        'Honest, hands-on product reviews and recommendations. Steve buys, tests, and ranks the best gear in kitchen, tech, home, outdoors & more.');
 define('DEFAULT_META_KEYWORDS',    'best products 2026, product reviews, steve recommendations, affiliate reviews, best kitchen gadgets, best tech gear');
 
-// ─── Social / Open Graph ────────────────────────────────────────
-define('OG_IMAGE',         SITE_URL . '/assets/img/social-cards/steveget-facebook-card.jpg');
-define('TW_IMAGE',         SITE_URL . '/assets/img/social-cards/steveget-twitter-card.jpg');
-define('GOOGLE_LOGO',      SITE_URL . '/assets/img/social-cards/steveget-google-card.jpg');
-define('FB_APP_ID',        '0000000000');
-define('TWITTER_HANDLE',   '@steveget');
-
-// ─── Amazon Affiliate ───────────────────────────────────────────
-define('AMAZON_TAG',       'steveget-20'); // Your Amazon Associates tag
-define('AMAZON_BASE',      'https://www.amazon.com/dp/');
-
 // ─── File Paths ─────────────────────────────────────────────────
 define('ROOT_PATH',        dirname(__DIR__));
 define('INCLUDES_PATH',    ROOT_PATH . '/includes');
 define('ASSETS_URL',       '/assets');
+define('ASSET_VERSION',    '20260724-1');
+
+// ─── Social / Open Graph ────────────────────────────────────────
+define('OG_IMAGE',         SITE_URL . '/assets/img/social-cards/steveget-facebook-card.jpg?v=' . ASSET_VERSION);
+define('TW_IMAGE',         SITE_URL . '/assets/img/social-cards/steveget-twitter-card.jpg?v=' . ASSET_VERSION);
+define('GOOGLE_LOGO',      SITE_URL . '/assets/img/social-cards/steveget-google-card.jpg?v=' . ASSET_VERSION);
+define('FB_APP_ID',        '0000000000');
+define('TWITTER_HANDLE',   '@steveget');
+
+// ─── Google Review (SITE-GUIDE §0) ───────────────────────────────
+// Replace with official GBP write-a-review URL when available.
+define('GOOGLE_REVIEW_URL', 'https://www.google.com/search?q=SteveGet+steveget.com+review');
+define('GOOGLE_REVIEW_QR',  ASSETS_URL . '/img/review/google-review-qr-2026.png?v=' . ASSET_VERSION);
+
+// ─── Amazon Affiliate ───────────────────────────────────────────
+define('AMAZON_TAG',       'steveget-20'); // Your Amazon Associates tag
+define('AMAZON_BASE',      'https://www.amazon.com/dp/');
 
 // ─── Steve's Photo Proof ────────────────────────────────────────
 define('STEVE_PHOTO',      ASSETS_URL . '/img/steve/steve-profile.webp');

@@ -1,5 +1,6 @@
 # SteveGet.com — Robots.txt
-# Last updated: 2026-03-19
+# Last updated: 2026-07-24
+# AI discovery: https://www.steveget.com/llms.txt
 
 Sitemap: https://www.steveget.com/sitemap.xml
 Sitemap: https://www.steveget.com/sitemap.xml.gz
@@ -9,8 +10,9 @@ Allow: /
 Disallow: /admin.php
 Disallow: /admin-notes/
 Disallow: /includes/
-Disallow: /assets/js/
 Disallow: /*.bak$
+Disallow: /scripts/
+Disallow: /build.php
 
 # Block aggressive crawlers
 User-agent: AhrefsBot

@@ -93,4 +93,81 @@
     }
   });
 
+  // ─── Google Review system (SITE-GUIDE §0) ────────────────────
+  var cfg = window.STEVEGET || {};
+  var reviewUrl =
+    cfg.googleReviewUrl ||
+    'https://www.google.com/search?q=SteveGet+steveget.com+review';
+  var reviewQr =
+    (cfg.googleReviewQr || '/assets/img/review/google-review-qr-2026.png') +
+    (cfg.assetVersion ? '?v=' + cfg.assetVersion : '');
+  var reviewFab = document.getElementById('review-fab');
+  var reviewDialog = document.getElementById('review-dialog');
+  var reviewClose = document.getElementById('review-dialog-close');
+  var lastFocus = null;
+
+  function track(eventName, payload) {
+    try {
+      if (window.dataLayer && typeof window.dataLayer.push === 'function') {
+        window.dataLayer.push(Object.assign({ event: eventName }, payload || {}));
+      }
+    } catch (err) { /* analytics optional */ }
+  }
+
+  function openReview(source) {
+    if (!reviewDialog) return;
+    lastFocus = document.activeElement;
+    reviewDialog.hidden = false;
+    document.body.classList.add('dialog-open');
+    track('review_cta_open', { source: source || 'fab' });
+    var closeBtn = reviewClose || reviewDialog.querySelector('button');
+    if (closeBtn) closeBtn.focus();
+  }
+
+  function closeReview() {
+    if (!reviewDialog) return;
+    reviewDialog.hidden = true;
+    document.body.classList.remove('dialog-open');
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  if (reviewFab) {
+    reviewFab.addEventListener('click', function () {
+      openReview('floating');
+    });
+  }
+
+  document.querySelectorAll('[data-open-review]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      openReview(el.getAttribute('data-open-review') || 'inline');
+    });
+  });
+
+  if (reviewClose) {
+    reviewClose.addEventListener('click', closeReview);
+  }
+
+  if (reviewDialog) {
+    reviewDialog.addEventListener('click', function (e) {
+      if (e.target === reviewDialog) closeReview();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !reviewDialog.hidden) closeReview();
+    });
+  }
+
+  document.querySelectorAll('[data-review-link]').forEach(function (el) {
+    el.setAttribute('href', reviewUrl);
+    el.addEventListener('click', function () {
+      track('review_link_click', {
+        source: el.getAttribute('data-review-link') || 'unknown',
+      });
+    });
+  });
+
+  document.querySelectorAll('img[data-review-qr]').forEach(function (img) {
+    img.setAttribute('src', reviewQr);
+  });
+
 })();

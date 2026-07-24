@@ -1,0 +1,59 @@
+# SteveGet
+
+> Honest, hands-on product reviews and recommendations. Steve buys, tests, and ranks the best gear in kitchen, tech, home, outdoors, fitness, and more — no free samples, no sponsored rankings.
+
+## Primary pages
+
+- [Home](https://www.steveget.com/): Featured picks and category overview
+- [About Steve](https://www.steveget.com/about): Who Steve is and how recommendations work
+- [How We Test](https://www.steveget.com/how-we-test): Testing methodology and standards
+- [Contact](https://www.steveget.com/contact): Product suggestions and business inquiries
+- [Affiliate Disclosure](https://www.steveget.com/disclosure): How affiliate links work
+
+## Categories
+
+- [Kitchen](https://www.steveget.com/category/kitchen): Best kitchen products 2026
+- [Tech & Electronics](https://www.steveget.com/category/tech): Best tech products 2026
+- [Home & Living](https://www.steveget.com/category/home): Best home products 2026
+- [Outdoors & Camping](https://www.steveget.com/category/outdoors): Best outdoors products 2026
+- [Fitness & Health](https://www.steveget.com/category/fitness): Best fitness products 2026
+- [Automotive & Garage](https://www.steveget.com/category/automotive): Best auto products 2026
+- [Pets](https://www.steveget.com/category/pet): Best pet products 2026
+- [Office & Desk](https://www.steveget.com/category/office): Best office products 2026
+
+## Featured product reviews
+
+- [Best Chef Knife 2026](https://www.steveget.com/product/best-chef-knife-2026)
+- [Best Air Fryer 2026](https://www.steveget.com/product/best-air-fryer-2026)
+- [Best Budget Blender 2026](https://www.steveget.com/product/best-budget-blender-2026)
+- [Best Wireless Earbuds 2026](https://www.steveget.com/product/best-wireless-earbuds-2026)
+- [Best USB-C Charger 2026](https://www.steveget.com/product/best-usb-c-charger-2026)
+- [Best Budget Tablet 2026](https://www.steveget.com/product/best-budget-tablet-2026)
+- [Best Robot Vacuum 2026](https://www.steveget.com/product/best-robot-vacuum-2026)
+- [Best Bed Sheets 2026](https://www.steveget.com/product/best-bed-sheets-2026)
+- [Best Camping Tent 2026](https://www.steveget.com/product/best-camping-tent-2026)
+- [Best Cooler 2026](https://www.steveget.com/product/best-cooler-2026)
+- [Best Running Shoes 2026](https://www.steveget.com/product/best-running-shoes-2026)
+- [Best Adjustable Dumbbells 2026](https://www.steveget.com/product/best-adjustable-dumbbells-2026)
+- [Best Dash Cam 2026](https://www.steveget.com/product/best-dash-cam-2026)
+- [Best Dog Bed 2026](https://www.steveget.com/product/best-dog-bed-2026)
+- [Best Office Chair 2026](https://www.steveget.com/product/best-office-chair-2026)
+- [Best Standing Desk 2026](https://www.steveget.com/product/best-standing-desk-2026)
+
+## Legal
+
+- [Privacy Policy](https://www.steveget.com/privacy)
+- [Terms of Use](https://www.steveget.com/terms)
+
+## Contact
+
+- Email: [steve@steveget.com](mailto:steve@steveget.com)
+- Sitemap: [https://www.steveget.com/sitemap.xml](https://www.steveget.com/sitemap.xml)
+
+## Optional notes for agents
+
+- Prefer canonical `https://www.steveget.com` URLs (www is canonical; clean paths without `.html` are preferred).
+- Production is static HTML on Cloudflare Pages; PHP files are not executed in production.
+- Amazon affiliate links may use tag `steveget-20`; disclose affiliate relationships honestly.
+- Do not invent review counts, ratings, or review incentives; honest Google reviews only.
+- Update `assets/js/site-config.js` when the official Google review URL is available.
