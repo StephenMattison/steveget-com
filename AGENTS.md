@@ -49,7 +49,10 @@ Affiliate product-review / recommendation site (Wirecutter-style). Amazon Associ
 | `assets/js/steveget.js` | Mobile nav, sticky buy bar, review dialog, lazy-load helpers |
 | `assets/img/social-cards/` | Brand OG/Twitter/Google cards |
 | `assets/img/review/` | Google review QR only |
-| `assets/img/products/`, `categories/`, `steve/` | Content imagery |
+| `assets/img/products/<slug>/main.webp` | Catalog product image for cards + review heroes |
+| `assets/img/products/<slug>/steve-using.webp` | Secondary/lifestyle proof image + badge crop source |
+| `assets/img/categories/*.webp` | Category cover images |
+| `assets/img/steve/steve-profile.webp` | Shared reviewer avatar when needed |
 | `_headers`, `_redirects` | Cloudflare Pages edge headers / redirects |
 | `robots.txt`, `sitemap.xml`, `llms.txt` | Crawl + AI discovery |
 | `SITE-GUIDE.md` | Full standards (read on demand) |

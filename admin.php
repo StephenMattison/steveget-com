@@ -174,8 +174,8 @@ $page_title = 'Admin — Product Notes Editor | ' . SITE_NAME;
           <tr><th>Config</th><td><code>includes/config.php</code> — site name, Amazon tag, URLs</td></tr>
           <tr><th>Product Images</th><td><code>assets/img/products/{slug}/main.webp</code></td></tr>
           <tr><th>Steve Photos</th><td><code>assets/img/products/{slug}/steve-using.webp</code></td></tr>
-          <tr><th>Category Images</th><td><code>assets/img/categories/{slug}.webp</code></td></tr>
-          <tr><th>Steve Profile</th><td><code>assets/img/steve/steve-profile.webp</code></td></tr>
+          <tr><th>Category Images</th><td><code>assets/img/categories/{slug}.webp?v=20260724-2</code></td></tr>
+          <tr><th>Steve Profile</th><td><code>assets/img/steve/steve-profile.webp?v=20260724-2</code></td></tr>
         </tbody>
       </table>
     </div>

@@ -100,7 +100,7 @@ $categories = [
  * 2. Drop your product images into assets/img/products/{product-slug}/
  *    - main.webp        (hero image)
  *    - steve-using.webp  (your photo proof)
- *    - gallery-1.webp, gallery-2.webp … (optional)
+ *    - gallery-1.webp, gallery-2.webp?v=20260724-2 … (optional)
  * 3. Fill in steve_notes with your personal take.
  */
 $products = [

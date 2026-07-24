@@ -16,5 +16,5 @@ window.STEVEGET = {
   /** QR asset path — bump ?v= on pages when this image changes */
   googleReviewQr: "/assets/img/review/google-review-qr-2026.png",
   locale: "en-US",
-  assetVersion: "20260724-1",
+  assetVersion: "20260724-2",
 };

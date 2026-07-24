@@ -22,7 +22,7 @@ define('DEFAULT_META_KEYWORDS',    'best products 2026, product reviews, steve r
 define('ROOT_PATH',        dirname(__DIR__));
 define('INCLUDES_PATH',    ROOT_PATH . '/includes');
 define('ASSETS_URL',       '/assets');
-define('ASSET_VERSION',    '20260724-1');
+define('ASSET_VERSION',    '20260724-2');
 
 // ─── Social / Open Graph ────────────────────────────────────────
 define('OG_IMAGE',         SITE_URL . '/assets/img/social-cards/steveget-facebook-card.jpg?v=' . ASSET_VERSION);

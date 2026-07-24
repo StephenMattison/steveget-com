@@ -27,7 +27,7 @@ Each product needs 2 images minimum in its folder:
 assets/img/products/{product-slug}/main.webp          (product photo, ~600x450px)
 assets/img/products/{product-slug}/steve-using.webp    (YOU using the product)
 assets/img/products/{product-slug}/gallery-1.webp      (optional extra photos)
-assets/img/products/{product-slug}/gallery-2.webp      (optional)
+assets/img/products/{product-slug}/gallery-2.webp?v=20260724-2      (optional)
 ```
 
 ### Product Slugs (folder names):
@@ -71,5 +71,5 @@ assets/img/social-cards/steveget-google-card.jpg     (1200x630px)
 2. Copy any existing product array
 3. Change the slug, name, category, ASIN, and all other fields
 4. Create the image folder: `assets/img/products/{new-slug}/`
-5. Add `main.webp` and `steve-using.webp` to that folder
+5. Add `main.webp?v=20260724-2` and `steve-using.webp?v=20260724-2` to that folder
 6. Add the product URL to `sitemap.xml`
