@@ -227,23 +227,31 @@ Vary: Origin
 #### 2.2.1 CSP — `script-src 'self'` blocks ALL inline `<script>` (including event handlers)
 Our standard CSP omits `'unsafe-inline'` from `script-src`. This is correct and mandatory on this network. It also means any inline `<script>…</script>` block, any `onclick="…"`/`onsubmit="…"`/etc. attribute, and any `javascript:` URL is silently blocked by the browser in production. The page renders fine; the feature just does nothing. This is the #1 "works locally, dead in prod" gotcha.
 
-**Hard rule for every new site:**
-- `script-src` must **not** include `'unsafe-inline'`. If you see it in a draft `_headers` or CSP config, remove it before launch.
-- Put **all** JavaScript in external files under `/js/<feature>.js` and load with `<script src="/js/<feature>.js" defer></script>`.
+**Hard rule for site-authored JavaScript (every new site):**
+- Put **all** application JavaScript in external files (e.g. `/assets/js/<feature>.js`) and load with `<script src="…" defer></script>`.
 - Wire up events with `addEventListener` from inside that external file. Never use `onclick=`/`onsubmit=`/`onchange=`/any `on*=` HTML attribute.
 - Never use `javascript:` URLs in links or buttons.
-- The only inline `<script>` allowed in HTML is `<script type="application/ld+json">…</script>` for structured data.
-- If a third-party snippet truly requires inline JS, use a CSP hash or nonce for that exact snippet. Never weaken policy with `'unsafe-inline'`.
+- The only inline `<script>` allowed in **our HTML source** is `<script type="application/ld+json">…</script>` for structured data.
+- Do **not** put static script **hashes/nonces** in CSP unless you fully control every inline injector on the live response (you usually do not on Cloudflare).
 
-**Cloudflare Challenge Platform compatibility (mandatory):**
-- Cloudflare may inject inline JS from `/cdn-cgi/challenge-platform/scripts/jsd/main.js`.
-- If your `script-src` contains both `'unsafe-inline'` and script hashes/nonces, browsers ignore `'unsafe-inline'`, which can still block Cloudflare-injected inline JS and trigger Lighthouse Best Practices failures (`errors-in-console`, `inspector-issues`).
-- Use one strategy per environment:
-  1. **Strict CSP strategy (preferred):** keep hashes/nonces and disable JS challenge injection on normal page traffic.
-  2. **Compatibility strategy:** keep `'unsafe-inline'` and remove script hashes/nonces from `script-src`.
+**Cloudflare Challenge Platform + Email Obfuscation (mandatory on CF-hosted sites):**
+- Live HTML often gains injectors that are **not in the repo**:
+  - Challenge Platform: inline `<script>` setting `window.__CF$cv$params` + `/cdn-cgi/challenge-platform/scripts/jsd/main.js`
+  - Email Address Obfuscation: `/cdn-cgi/scripts/…/email-decode.min.js` (when raw emails appear in HTML)
+  - Web Analytics: `https://static.cloudflareinsights.com/beacon.min.js`
+- A CSP of `script-src 'self'` **without** `'unsafe-inline'` will block the Challenge Platform inline bootstrap. Lighthouse then fails Best Practices with `errors-in-console` / Issues panel **Content security policy** — even when *our* source is clean.
+- If your `script-src` contains both `'unsafe-inline'` and script hashes/nonces, browsers **ignore** `'unsafe-inline'`, which still blocks Cloudflare-injected inline JS.
+- Use **one** strategy per environment:
+  1. **Strict CSP strategy:** no `'unsafe-inline'`; disable Challenge Platform JS injection and Email Address Obfuscation on normal public page traffic in the Cloudflare dashboard (Bot Fight / Scrape Shield). Prefer when the account can turn those injectors off.
+  2. **Compatibility strategy (default for Cloudflare Pages when challenges remain on):**  
+     `script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com;`  
+     **no** script hashes/nonces. Site JS stays external; `'unsafe-inline'` exists only so CF injectors do not fail Best Practices 100.
+- Also allow Insights connect endpoints when Web Analytics is on:  
+  `connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;`
 - Verify after deploy with:
   - `curl -sI https://<canonical-domain>/ | grep -i content-security-policy`
-  - Lighthouse Best Practices on the live homepage.
+  - View source / DevTools Console on the **live** homepage — zero CSP red errors
+  - Lighthouse Best Practices on the live homepage in a clean browser
 
 **Standard implementation pattern:**
 
@@ -298,7 +306,7 @@ Cloudflare Pages (and many static hosts) default to `Access-Control-Allow-Origin
   Cross-Origin-Resource-Policy: same-site
   Access-Control-Allow-Origin: https://<canonical-domain>
   Vary: Origin
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; media-src 'self'; connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
 
 /css/*
   Cache-Control: public, max-age=31536000, immutable
@@ -453,8 +461,10 @@ Measurement (required on every build):
 Platform-agnostic rules (apply to all current and future sites regardless of hosting):
 - Mobile-first, responsive design with touch-friendly interactions.
 - Optimize all images: proper sizing, modern formats (AVIF/WebP **when they are actually smaller**), correct intrinsic `width`/`height`, native lazy loading below the fold, and `fetchpriority="high"` on the LCP image.
+- **LCP must be HTML-discoverable:** full-bleed heroes use a real `<img class="hero__media">` (or equivalent) with preload + `fetchpriority="high"`. Do not rely on CSS `background-image` as the sole LCP element (fails PageSpeed “LCP request discovery”).
 - Preload the LCP image (`<link rel="preload" as="image" … imagesrcset … imagesizes>`) when the hero is the LCP candidate.
-- Prefer a **system font stack** on marketing sites when Google Fonts (or other third-party fonts) block FCP; if custom fonts are required, self-host with `font-display: swap` and preload only the critical face.
+- Prefer a **system font stack** on marketing sites. **Do not** `@import` Google Fonts from CSS. If custom fonts are required, self-host with `font-display: swap` and preload only the critical face.
+- Ship **display-sized** logos/icons (≈2× CSS pixels). A 1500px-wide logo in a 28px-tall nav slot is a launch defect.
 - CSS delivery: small site CSS (≈≤15 KiB gzipped/transferred) may stay a single render-blocking stylesheet for layout stability and Lighthouse 100. For larger CSS, use critical CSS + non-blocking full CSS. **Never** use inline `onload=` on `<link>` under our strict CSP — use a tiny external JS loader instead.
 - All non-critical JavaScript deferred or async.
 - Reserve space for all dynamic or loaded elements (images, forms, Supabase data) using aspect-ratio, min-height, or skeleton loaders to eliminate layout shift.
@@ -1218,41 +1228,52 @@ These appear in the network tree even when HTML never references them:
 - **Do not** try to “fix” `ERR_BLOCKED_BY_CLIENT` on Insights by editing HTML when an ad blocker is active.
 - **Do** keep long-cache headers on **first-party** `/assets/*` (`max-age=31536000, immutable` + `?v=` bust). Short cache on CF’s own beacon (often `max-age=86400`) is outside repo control and commonly triggers “efficient cache lifetimes” for a few KiB — ignore unless you own that URL.
 
-#### C. CSP when Cloudflare Web Analytics is on
+#### C. CSP when Cloudflare Web Analytics and/or Challenge Platform are on
 
-If Web Analytics / the Insights beacon is enabled, extend CSP (Pages `_headers` or equivalent):
+**Day-one default for Cloudflare Pages** (Compatibility strategy — see §2.2.1):
 
 ```
-script-src 'self' https://static.cloudflareinsights.com;
+script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com;
 connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;
 ```
 
-Keep `script-src` **without** `'unsafe-inline'` (see §2.2.1). Allowing the Insights host prevents false Best Practices failures when the beacon is **not** blocked by an extension.
+- `'unsafe-inline'` is required when Challenge Platform injects the live inline bootstrap (`window.__CF$cv$params`). Without it, Lighthouse Best Practices fails even if repo HTML has no inline scripts.
+- **Never** combine `'unsafe-inline'` with script hashes/nonces.
+- Allowing the Insights host prevents false Best Practices failures when the beacon is **not** blocked by an extension.
+- Prefer Strict strategy only when the CF dashboard has challenge JS and email-decode injectors disabled on public HTML.
 
 #### D. Performance patterns that preserve 100 (mobile + desktop)
 
-1. **LCP image**
+1. **LCP image (critical — Electric Modal / full-bleed hero lesson)**
+   - The LCP candidate **must be a real `<img>` (or `<picture>`) in the HTML**, not a CSS `background-image` alone. CSS-only heroes fail “LCP request discovery” (`fetchpriority` / not discoverable in initial document).
    - Correct intrinsic `width`/`height` matching the real file (wrong aspect → CLS risk).
    - `fetchpriority="high"` on the LCP `<img>`.
-   - `<link rel="preload" as="image" …>` with `imagesrcset` / `imagesizes` when using responsive heroes.
-   - Provide a smaller width candidate for mobile (e.g. 640w + 960w) when it actually reduces bytes.
+   - `<link rel="preload" as="image" href="…" imagesrcset="…" imagesizes="…">` in `<head>` when the hero is LCP.
+   - Provide a smaller width candidate for mobile (e.g. 960w + 1600w) when it actually reduces bytes.
+   - Decorative LCP / full-bleed photo: use `alt=""` when adjacent text already carries the message; still keep the element in HTML for performance.
 2. **Images**
    - Prefer WebP/AVIF **only when smaller than the PNG/JPEG**. Simple QR codes and flat graphics are often **smaller as optimized PNG** — do not force WebP and increase weight.
+   - **Nav / chrome logos:** export at ~2× display size (e.g. ~488×112 for a ~244×56 logo), not multi-megapixel source PNGs (Lighthouse “image larger than needed” is a free win).
+   - Section backgrounds that are **not** LCP may use CSS `image-set()` (WebP + JPEG fallback) so browsers pick the smaller format without a markup rewrite.
    - `loading="lazy"` + `decoding="async"` for below-fold and chrome (footer logos, FAB avatars, review QR in dialogs).
    - Never lazy-load the LCP image.
 3. **Fonts**
-   - Default to system UI stack for lean marketing sites.
-   - Drop render-blocking Google Fonts if FCP is the remaining Performance gap.
+   - Default to **system UI stack** for lean marketing sites:  
+     `font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;`
+   - **Never** `@import` Google Fonts (or any third-party font CSS) from the site stylesheet — that creates a render-blocking **network dependency chain** (CSS → fonts.googleapis.com → fonts.gstatic.com) and costs FCP/LCP.
+   - If a custom font is required: self-host WOFF2, `font-display: swap`, preload **one** critical face only; do not load 300/400/500/700 unless every weight is used above the fold.
 4. **CSS**
-   - One solid external stylesheet is acceptable when small and scores are 100.
+   - One solid external stylesheet is acceptable when small (≈≤15 KiB transferred) and scores are 100.
    - Strict CSP blocks inline `link.onload = …`. Async CSS must use an **external** activator script, not HTML event attributes.
 5. **JS**
    - Site scripts: `defer` only, no blocking in `<head>`.
    - Do not load third-party widgets globally.
+   - Ignore Lighthouse “minify/unused JavaScript” when the large payloads are **Cloudflare-injected** (`/cdn-cgi/…`, challenge platform, email-decode). Do not minify those; they are not in the repo.
 
 #### E. Accessibility patterns that recover contrast failures
 
 - Lighthouse Accessibility &lt; 100 is often **color contrast** on brand orange CTAs, muted footer links, or placeholder text.
+- **Footer / legal copy:** greys like `#8E8E8E` on `#FFFFFF` fail AA for small text (~3.3:1). Use at least **`#6B6B6B`** (~5.3:1); prefer **`#4A4A4A`–`#5C5E62`** for body/footer chrome.
 - Darken brand accent and footer body/link colors until AA (and re-check hover/focus states).
 - Force explicit text color on filled buttons (e.g. white on teal/orange) so inherited greys never win.
 - Re-test mobile and desktop; contrast failures are viewport-independent but interactive states can differ.
