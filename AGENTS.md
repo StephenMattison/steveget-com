@@ -75,6 +75,26 @@ When both PHP and static HTML exist for a page, keep behavior and content consis
 - Internal links in HTML currently use `.html` suffixes; both work. Sitemap and `llms.txt` prefer **clean canonical-style URLs** without `.html` where the live site redirects that way.
 - Sitemap must list **static public pages**, not dead `*.php?…` query URLs.
 
+## Commands
+
+- Compliance: `python3 scripts/check-site-guide-compliance.py`
+- Fresh product schema dates (when needed): `python3 scripts/refresh-price-valid-until.py`
+- Deploy: `git push origin main` → wait ~1–3 min → verify **https://www.steveget.com**
+- Production = **root static HTML** (not PHP / not `dist/`)
+
+## Boundaries
+
+- This remote only; never force-push or amend published history
+- Never edit `SITE-GUIDE.md` here (canonical site-guide → `./sync-guide.sh`)
+- Never commit secrets, API keys, or `.env`
+- Keep affiliate disclosure honest; no review-gating or incentivized Google reviews
+- Do not invent ratings or product claims without source
+
+## Security
+
+- No payment secrets on this site; Amazon tag lives in config (`steveget-20`) — do not invent other tags
+- Never commit credentials; treat contact form input as untrusted if server-side is added
+
 ## Workflow reminders
 
 - Commit and push after website/code changes (this remote only).
