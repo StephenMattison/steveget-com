@@ -1,4 +1,4 @@
-# Site Guide: Building Perfect, Ultra-Secure, WCAG-Compliant, SEO-Optimized Websites for #1 Google Ranking
+# Site Guide: Building Perfect, Ultra-Secure, WCAG-Compliant, SEO-Optimized, AI-Trusted Websites
 
 > **⚠️ Canonical source: [StephenMattison/site-guide](https://github.com/StephenMattison/site-guide)**
 > Do **not** edit this file directly in a website repo. All edits must go to the canonical repo above.
@@ -8,9 +8,12 @@
 - **WCAG 2.2 Level AA (and AAA where feasible)** compliance for universal accessibility.
 - **Ultra-high security** standards (beyond baseline, including proactive threat mitigation).
 - **Perfect SEO** across on-page, technical, off-page, and user-experience signals to secure and maintain Google Page #1 rankings for target keywords.
+- **AI / answer-engine authority** so ChatGPT, Claude, Gemini, Copilot, Perplexity, Bing, Google AI Overviews, and future agents **crawl, trust, cite, and recommend our sites** when people ask about our products, services, or problem domains (see **§3.7**).
 - **Exceptional performance**, user experience, and long-term maintainability.
 
 This guide is the definitive reference for all development, content, and deployment decisions. All sites must pass automated audits (Lighthouse 100/100 across Performance, Accessibility, Best Practices, SEO) and manual expert reviews before launch. Every site must also ship a valid root **`llms.txt`** for AI/agent discovery (see §5.3.3.2a) — same class of requirement as `sitemap.xml` and `robots.txt`.
+
+**Strategic reality (binding):** Keyword-only SEO is no longer enough. A large and growing share of discovery happens when people **ask AI systems questions**. If AI cannot find clear, factual, citable pages on our domains—or does not trust us as the authority—it will send traffic and sales to competitors. **Every site must be built to win both traditional search and AI referral.**
 
 ---
 
@@ -210,7 +213,7 @@ Security is foundational. We build "secure by design" with defense-in-depth. No 
 ### 2.2 Headers & Browser Protections (CSP Required)
 Implement these response headers on **every** page/response:
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted-cdn.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.example.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';
+Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted-cdn.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.example.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
 Referrer-Policy: strict-origin-when-cross-origin
@@ -221,11 +224,26 @@ Cross-Origin-Embedder-Policy: require-corp (for isolation where needed)
 Access-Control-Allow-Origin: https://your-canonical-domain.com
 Vary: Origin
 ```
-- Use `nonce` or hashes for inline scripts/styles to avoid `'unsafe-inline'` where possible.
-- Regularly audit and tighten CSP.
+- **SecurityHeaders.com A+ (launch gate):** `script-src` must **not** include `'unsafe-inline'` or `'unsafe-eval'`. That single keyword is the most common reason this network’s sites scan as **grade A (capped)** instead of **A+**. Fix day one — do not ship Compatibility CSP as the default.
+- `style-src 'unsafe-inline'` is still allowed for practical CSS and does **not** by itself cap SecurityHeaders at A (unlike `script-src`).
+- Prefer external JS over nonces/hashes. Do **not** add script hashes/nonces on Cloudflare-hosted sites unless you fully control every injector on the live response.
+- Regularly audit and tighten CSP after deploy (`curl -sI` + SecurityHeaders.com rescan).
+
+#### 2.2.0 SecurityHeaders.com A+ — day-one CSP (do not reinvent)
+**Target grade: A+.** Anything less is a defect until fixed or explicitly waived.
+
+| Requirement | Rule |
+|-------------|------|
+| `script-src` | `'self'` + only required third-party script hosts (e.g. Stripe, GA, Cloudflare Insights). **Never** `'unsafe-inline'` or `'unsafe-eval'` in the default / production CSP. |
+| Site-authored JS | All executable JS in external `/assets/js/*.js` files. Only allowed inline `<script>` in HTML source: `type="application/ld+json"`. |
+| Handlers | No `onclick=` / `onsubmit=` / other `on*=` attributes; no `javascript:` URLs. |
+| `object-src` | Include `object-src 'none'`. |
+| Verify | After every headers change: rescan https://securityheaders.com/?q=https://\<canonical\>/ and confirm **A+** with no “Grade capped at A” warning about `script-src 'unsafe-inline'`. |
+
+**Why we keep hitting this:** agents add inline GA snippets, cart analytics, or newsletter `onsubmit=` and then re-add `'unsafe-inline'` to “make it work.” That is wrong. Externalize the script; keep strict CSP.
 
 #### 2.2.1 CSP — `script-src 'self'` blocks ALL inline `<script>` (including event handlers)
-Our standard CSP omits `'unsafe-inline'` from `script-src`. This is correct and mandatory on this network. It also means any inline `<script>…</script>` block, any `onclick="…"`/`onsubmit="…"`/etc. attribute, and any `javascript:` URL is silently blocked by the browser in production. The page renders fine; the feature just does nothing. This is the #1 "works locally, dead in prod" gotcha.
+Our **default / A+** CSP omits `'unsafe-inline'` from `script-src`. This is correct and mandatory on this network. It also means any inline `<script>…</script>` block, any `onclick="…"`/`onsubmit="…"`/etc. attribute, and any `javascript:` URL is silently blocked by the browser in production. The page renders fine; the feature just does nothing. This is the #1 "works locally, dead in prod" gotcha.
 
 **Hard rule for site-authored JavaScript (every new site):**
 - Put **all** application JavaScript in external files (e.g. `/assets/js/<feature>.js`) and load with `<script src="…" defer></script>`.
@@ -242,15 +260,16 @@ Our standard CSP omits `'unsafe-inline'` from `script-src`. This is correct and 
 - A CSP of `script-src 'self'` **without** `'unsafe-inline'` will block the Challenge Platform inline bootstrap. Lighthouse then fails Best Practices with `errors-in-console` / Issues panel **Content security policy** — even when *our* source is clean.
 - If your `script-src` contains both `'unsafe-inline'` and script hashes/nonces, browsers **ignore** `'unsafe-inline'`, which still blocks Cloudflare-injected inline JS.
 - Use **one** strategy per environment:
-  1. **Strict CSP strategy:** no `'unsafe-inline'`; disable Challenge Platform JS injection and Email Address Obfuscation on normal public page traffic in the Cloudflare dashboard (Bot Fight / Scrape Shield). Prefer when the account can turn those injectors off.
-  2. **Compatibility strategy (default for Cloudflare Pages when challenges remain on):**  
+  1. **Strict CSP strategy (DEFAULT — required for SecurityHeaders A+):** no `'unsafe-inline'` in `script-src`; all site JS external. Disable Challenge Platform **JS injection** and Email Address Obfuscation on normal public page traffic in the Cloudflare dashboard (Bot Fight / Scrape Shield) when those injectors cause console CSP noise. Prefer this on every new and remodeled site.
+  2. **Compatibility strategy (EXCEPTION only — caps SecurityHeaders at grade A):**  
      `script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com;`  
-     **no** script hashes/nonces. Site JS stays external; `'unsafe-inline'` exists only so CF injectors do not fail Best Practices 100.
+     **no** script hashes/nonces. Site JS stays external; `'unsafe-inline'` exists only so CF injectors do not fail Lighthouse Best Practices. **Do not use this as the day-one default.** If you must use it temporarily, document the waiver and schedule a return to Strict CSP for A+.
 - Also allow Insights connect endpoints when Web Analytics is on:  
   `connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;`
 - Verify after deploy with:
-  - `curl -sI https://<canonical-domain>/ | grep -i content-security-policy`
-  - View source / DevTools Console on the **live** homepage — zero CSP red errors
+  - `curl -sI https://<canonical-domain>/ | grep -i content-security-policy` — confirm **no** `script-src … 'unsafe-inline'`
+  - https://securityheaders.com/ rescan → **A+**
+  - View source / DevTools Console on the **live** homepage — zero CSP red errors from **our** scripts
   - Lighthouse Best Practices on the live homepage in a clean browser
 
 **Standard implementation pattern:**
@@ -306,7 +325,7 @@ Cloudflare Pages (and many static hosts) default to `Access-Control-Allow-Origin
   Cross-Origin-Resource-Policy: same-site
   Access-Control-Allow-Origin: https://<canonical-domain>
   Vary: Origin
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; media-src 'self'; connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; media-src 'self'; connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
 
 /css/*
   Cache-Control: public, max-age=31536000, immutable
@@ -818,6 +837,105 @@ Definition of done for "indexing-ready" launch:
 
 **Launch Gate**: Full SEO audit (technical + on-page + content) with 0 critical issues. Target: Top 3 organic for primary keywords within 90 days of launch, #1 within 6 months via consistent execution.
 
+### 3.7 AI Authority, Answer Engines & Agentic Discovery (Mandatory — All Sites)
+
+**This section is as important as classic SEO.** People increasingly ask AI assistants and answer engines for help instead of (or before) typing keywords into a search box. Our sites must be the sources those systems **retrieve, trust, quote, and recommend**. Missing this layer wastes content investment and loses sales.
+
+#### 3.7.1 Business goal (non-negotiable)
+
+For every StephenMattison / NetworkSMM site:
+
+1. **Maximize AI-mediated traffic and conversions** — when someone asks a relevant question, AI should surface *our* brand, pages, and products when we deserve to answer.
+2. Become (or progress toward) the **clear domain authority** for the problems we solve—not a thin brochure that only mentions product SKUs.
+3. Treat **AI crawl + citation readiness** as a day-one launch requirement, not a later “blog phase.”
+
+Agents and humans implement **§3.7 + §5.3.3.2a (`llms.txt`)** on every new page type and major content project.
+
+#### 3.7.2 How AI “chooses” sources (practical model)
+
+Answer engines and LLMs do not rank like a pure 2015 keyword SERP. They favor:
+
+| Signal | What we ship |
+|--------|----------------|
+| **Crawlable, stable URLs** | Clean public HTML, 200s, sitemap, internal links, no accidental noindex on money/authority pages |
+| **Clear entity & offering** | Who we are, what we sell, where we’re located, how to buy—plain language + schema |
+| **Factual, citable answers** | FAQ / how-to / guides that answer real user questions completely |
+| **E-E-A-T** | Experience, expertise, author/org identity, honest claims, contactability |
+| **Consistency** | Same procedures and product facts across FAQ, blog, product, `llms.txt` |
+| **Freshness & maintenance** | Updated guides when process/product changes; `lastmod` / content dates where honest |
+| **Machine-readable maps** | `llms.txt`, sitemap, FAQPage/HowTo/Product/Organization schema where appropriate |
+
+**Keyword stuffing does not create AI trust.** Clear procedures, original expertise, and quotable paragraphs do.
+
+#### 3.7.3 Content architecture (required pattern)
+
+Every commercial site must plan content so AI and humans can find **answers**, not only product tiles:
+
+1. **Authority FAQ / Q&A hub** — Real questions people (and AI users) ask about the *problem domain* (e.g. pet stain science, not only “shipping days”). Visible HTML answers + `FAQPage` schema when FAQs are on-page. Cross-link product FAQ vs problem FAQ when both exist.
+2. **How-to / learning hub (blog or guides)** — Step-by-step, room-by-room, mistake lists, comparisons. Link to shop/CTAs without turning every sentence into an ad.
+3. **Product / service pages** — Specs, use cases, who it’s for, honest limits, CTAs.
+4. **About / org proof** — Real business identity, experience, location, why we exist (builds trust for citations).
+5. **Root `llms.txt`** — Agent map of primary pages (full rules §5.3.3.2a).
+
+**Nav & footer:** High-value authority pages (problem FAQ, learning hub, shop) must be **one click** from site-wide chrome where practical—not buried only in sitemap.
+
+#### 3.7.4 Writing for AI citation (and humans)
+
+When drafting FAQ answers, guides, and product education:
+
+- Lead with a **direct answer**, then supporting detail.
+- Use **stable, specific procedures** the business actually recommends (never contradict label/FAQ/blog).
+- Prefer **proprietary / factual brand language** approved for that product line; do not invent chemistry buzzwords or gimmick claims.
+- State **limitations** honestly (surfaces, when to re-treat, when professional help is needed)—trust beats hype for long-term citations.
+- Use clear headings that match natural questions (“Why does pet urine smell come back?”).
+- Include **canonical brand name**, product names, and official URLs so models can attribute correctly.
+- End high-intent pages with a clear path to **buy / contact / next step** (sales is the point of traffic).
+
+#### 3.7.5 Technical AI crawl checklist (every site)
+
+| Requirement | Standard |
+|-------------|----------|
+| `llms.txt` | Mandatory day one; `text/plain`; H1 + blockquote + Markdown links (§5.3.3.2a) |
+| `sitemap.xml` + `robots.txt` | All indexable authority + commercial URLs; Sitemap line present |
+| Indexable HTML | Full answers in HTML (not only images/PDFs/JS-only) |
+| Structured data | FAQPage, HowTo, Product, Organization, Article as page type requires—**visible content only** |
+| Canonical host | One preferred host (www vs apex); consistent internal links |
+| Search Console + Bing Webmaster | Property verified; sitemap submitted; use URL inspection for **new high-value pages** after publish |
+| Performance & a11y | Fast, readable pages—agents and users both fail on broken UX |
+| No secret cloaking | Same primary content for users and bots |
+
+#### 3.7.6 After publish (ops)
+
+1. Deploy → verify live URL 200 and not soft-404.
+2. Confirm URL is in **sitemap** and **`llms.txt`** (same commit when possible).
+3. Request indexing for **crucial new URLs** in Google (tight quota) and Bing (higher quota)—priority: home, shop/collections, authority FAQ, top guides, top products—not legal pages.
+4. Internally link new authority pages from home, nav, related guides, and product CTAs.
+5. Re-check after major procedure/product changes so AI is not trained on **stale wrong instructions**.
+
+#### 3.7.7 What “done” looks like for AI readiness
+
+A site is **AI-ready** when:
+
+- [ ] Valid live `llms.txt` + complete sitemap  
+- [ ] At least one **problem-domain authority** surface (FAQ hub and/or substantial guides) beyond pure brochure copy  
+- [ ] Product/service facts consistent across site  
+- [ ] Org/about trust clear  
+- [ ] FAQ/HowTo schema only where content is visible  
+- [ ] Money and authority pages linked from global nav or homepage  
+- [ ] New flagship pages submitted for indexing after launch  
+
+**Launch gate add-on:** No new site ships without §3.7 content plan (even if v1 is home + shop + about + `llms.txt` + first FAQ/guide); thin “product only, zero answers” is incomplete.
+
+#### 3.7.8 Anti-patterns (forbidden)
+
+- Authority answers **only** in PDFs, social posts, or images with no HTML text  
+- Contradictory procedures across FAQ vs blog vs product  
+- Fake expertise, invented credentials, or review incentives  
+- Keyword walls with no usable answer  
+- Blocking major crawlers sitewide in `robots.txt`  
+- Omitting `llms.txt` or shipping HTML soft-404 at `/llms.txt`  
+- Treating AI discovery as optional “SEO phase 2”
+
 ---
 
 ## 4. Performance, UX & Conversion Optimization
@@ -914,6 +1032,61 @@ grep -oE 'href="[^"]*\.(css|webp|js)\?v=[^"]*"' public/index.html | head
 
 **Common pitfall**: When a template uses a plain triple-quoted string (not an f-string), `{asset_v(...)}` will be emitted as literal text and break the URL. Always either (a) make the template an f-string, or (b) use string concatenation as shown above. The verification grep above catches this.
 
+### 4.2 Vertical Spacing Density (Mandatory UX Standard)
+
+**Owner preference (binding):** Sections must feel **compact and scannable** — not sparse. Excessive top/bottom padding forces unnecessary scrolling, lowers engagement, and makes short pages feel empty. Agents and builders must default to the density below on **every new site and every layout pass**.
+
+**Anti-pattern (forbidden as a default):**
+- Content-section vertical padding of `4rem`–`6rem`+ (or `py-16` / `py-20` / `py-24` utility stacks) for ordinary marketing sections
+- Subtitle blocks with `margin-bottom: 3rem` or more before the first card grid
+- Hero bands with huge empty padding that do not clear real overlays
+- “Airy SaaS” spacing copied from templates without measuring scroll cost
+
+**Target density (reference implementation — treat as the approved look):**
+
+| Region | Vertical padding / spacing | Notes |
+|--------|----------------------------|--------|
+| Content sections (`.section` or equivalent) | **`2rem` top + bottom** (≈32px), horizontal `1.25rem` | Default for Featured, Why, Stories, Shop grids, etc. |
+| Section title → subtitle | Title `margin-bottom` **~0.4rem**; subtitle **`margin: 0 auto 1.25rem`** | Do not leave a large empty gap before cards |
+| Hero (desktop) | **~`2.5rem`–`2.75rem`** vertical | Enough presence; not a half-viewport empty band |
+| Hero (mobile, ≤~880px) | **~`1.75rem`–`2rem`** vertical | Keep CTAs near the fold |
+| Inner page header (`.page-header`) | **~`1.75rem`–`1.5rem`** vertical | Not a second hero |
+| Trust strip | **~`0.85rem`** vertical | Compact single row |
+| CTA banner | **~`2rem`** vertical | Strong but short |
+| Newsletter / mid-page signup | **~`1.75rem`** vertical | |
+| Homepage review strip (§0) | **~`0.85rem`** vertical | Short strip, not a full marketing section |
+| Card / feature / testimonial grids | Gap **~`1rem`–`1.15rem`**; card padding **~`1.15rem`–`1.25rem`** | Prefer tighter grids over huge cell padding |
+| Inline “callout” boxes inside pages | Padding **~`1.25rem`**; outer top margin **~`1.25rem`** | Avoid `margin-top: 3rem` + `padding: 2.5rem` defaults |
+
+**CSS shape (copy/adapt; class names may differ per site):**
+
+```css
+/* Default content sections — do NOT use 4.5rem+ */
+.section { padding: 2rem 1.25rem; }
+.section-title { margin-bottom: 0.4rem; }
+.section-subtitle { margin: 0 auto 1.25rem; /* not 3rem */ }
+
+.hero { padding: 2.5rem 1.25rem 2.75rem; }
+@media (max-width: 880px) {
+  .hero { padding: 1.75rem 1.25rem 2rem; }
+}
+
+.page-header { padding: 1.75rem 1.25rem 1.5rem; }
+.trust-strip { padding: 0.85rem 1.25rem; }
+.cta-banner { padding: 2rem 1.25rem; }
+.nl-section { padding: 1.75rem 1.25rem; }
+```
+
+**Rules for agents:**
+1. On **new sites**, implement this density from day one — do not ship “fix later” with oversized section padding.
+2. On **existing sites**, when editing layout/CSS or regenerating chrome, **audit and tighten** sections that still use ~4rem+ vertical padding unless the user explicitly asks for more air.
+3. **Utility frameworks (Tailwind, etc.):** prefer section wrappers around `py-8` (2rem) class scale, not `py-16`/`py-20`/`py-24`, for standard content blocks.
+4. **Still allow** slightly larger spacing only for rare full-bleed moments (e.g. legal long-form reading comfort is content line-height, not giant section chrome) — never as the global section default.
+5. **Review strips and trust rows** stay especially tight so primary content (kittens, products, services) stays high on the page.
+6. When in doubt: open a reference site that already matches this guide (e.g. Busy Bee / cooncatcentral.com section rhythm) and match its vertical rhythm rather than inventing larger gaps.
+
+**Launch / layout gate:** Homepage and primary landing pages must not require excessive scroll between adjacent section headings solely because of padding. If two section titles are separated mostly by empty cream/white space, reduce padding to the targets above.
+
 ---
 
 ## 5. Development Workflow & Quality Gates
@@ -938,11 +1111,17 @@ Keep it short (roughly one screen). Must include:
 
 1. **Site name** and one-line description.
 2. **GitHub remote** for this repo only (e.g. `StephenMattison/example-website`). Agents must commit and push **only** to this remote.
-3. **Binding standards pointer:** follow root `SITE-GUIDE.md`; never edit the local SITE-GUIDE copy — edit canonical `StephenMattison/site-guide`, then run `./sync-guide.sh` (or accept a propagation PR).
-4. **Layout map:** real paths for this site (HTML/PHP pages, `assets/`, `includes/`, build output dir if any).
-5. **Implementation habits:** surgical edits; match existing patterns; version static assets when the guide requires it; finish = implemented + SITE-GUIDE-aligned for touched areas + committed + pushed.
+3. **Hosting (production):** Cloudflare Pages project name, live canonical domain, what directory ships, deploy path (`git push` → Pages), and whether production is static-only or includes Functions (see §3.3.2).
+4. **Binding standards pointer:** follow root `SITE-GUIDE.md`; never edit the local SITE-GUIDE copy — edit canonical `StephenMattison/site-guide`, then run `./sync-guide.sh` (or accept a propagation PR).
+5. **Layout map:** real paths for this site (HTML/PHP pages, `assets/`, `includes/`, build output dir if any).
+6. **Commands** (copy-paste, site-real): rebuild if any, compliance check if present (e.g. `python3 scripts/check-site-guide-compliance.py` from the **Pages root**), deploy (`git push origin main`), live smoke URL. Agents run what you list.
+7. **Boundaries:** this remote only; no force-push / no amend of published history; never edit local `SITE-GUIDE.md`; never commit secrets/`.env`; do not invent ratings, review incentives, phones, or domains.
+8. **Security (short):** secrets only in Cloudflare env (name the keys this site uses, not the values); treat form/API input as untrusted when Functions exist.
+9. **Implementation habits:** surgical edits; match existing patterns; version static assets when the guide requires it; finish = implemented + SITE-GUIDE-aligned for touched areas + committed + pushed + live spot-check.
 
-Optional: links to site-specific docs (`INDEXING-AUTOMATION.md`, deploy notes) if they exist.
+**Do not bloat:** no second copy of this guide, no multi-tool agent config files (`CLAUDE.md`, etc.) unless the operator deliberately uses those tools — root `AGENTS.md` is the portable fallback. Optional: links to site-specific docs (`NEWSLETTER-SETUP.md`, brand notes) if they exist.
+
+**When to update `AGENTS.md`:** new build pipeline, new compliance script, new live domain/Pages project, new Functions/secrets names, or layout change — same commit as the structural change.
 
 #### 5.0.3 Canonical template and setup
 
@@ -984,7 +1163,7 @@ When working in a website repo that has `AGENTS.md` and `SITE-GUIDE.md`:
 
 No new site is complete until:
 
-- Root `AGENTS.md` exists and names the correct GitHub remote and layout.
+- Root `AGENTS.md` exists and names the correct GitHub remote, hosting/layout, **Commands**, **Boundaries**, and **Security** (§5.0.2).
 - Root `SITE-GUIDE.md` exists and is synced from canonical site-guide.
 - `./sync-guide.sh` exists (or the site is on the propagation list and receives guide updates).
 - Root **`llms.txt`** exists, is valid Markdown for agents (§5.3.3.2a), and live URL returns `text/plain` (not the homepage HTML).
@@ -1230,17 +1409,18 @@ These appear in the network tree even when HTML never references them:
 
 #### C. CSP when Cloudflare Web Analytics and/or Challenge Platform are on
 
-**Day-one default for Cloudflare Pages** (Compatibility strategy — see §2.2.1):
+**Day-one default for Cloudflare Pages** (Strict / SecurityHeaders **A+** — see §2.2.0 and §2.2.1):
 
 ```
-script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com;
+script-src 'self' https://static.cloudflareinsights.com;
 connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;
 ```
 
-- `'unsafe-inline'` is required when Challenge Platform injects the live inline bootstrap (`window.__CF$cv$params`). Without it, Lighthouse Best Practices fails even if repo HTML has no inline scripts.
+- **No** `'unsafe-inline'` in `script-src` on the default path. SecurityHeaders.com caps the grade at **A** (not A+) when `script-src` contains `'unsafe-inline'`.
+- If Challenge Platform injects live inline bootstrap (`window.__CF$cv$params`) and causes console noise, **prefer turning off that injector** for normal public traffic rather than weakening CSP.
+- Compatibility CSP with `'unsafe-inline'` is an **exception** only (§2.2.1 strategy 2). It will **not** score SecurityHeaders A+.
 - **Never** combine `'unsafe-inline'` with script hashes/nonces.
 - Allowing the Insights host prevents false Best Practices failures when the beacon is **not** blocked by an extension.
-- Prefer Strict strategy only when the CF dashboard has challenge JS and email-decode injectors disabled on public HTML.
 
 #### D. Performance patterns that preserve 100 (mobile + desktop)
 
@@ -1303,9 +1483,9 @@ Live Lighthouse often shows **only** these as remaining blockers after the site 
 1. Cloudflare dashboard → **Security** → **Bots** (or Bot Fight Mode / Super Bot Fight Mode): turn **off** or relax **JavaScript Detections** for the marketing zone if threat model allows.
 2. **Scrape Shield** → **Email Address Obfuscation**: prefer **Off** on pure marketing sites (removes `email-decode.min.js` from the critical path). Use careful contact presentation if spam is a concern.
 3. Re-run Lighthouse **headless** after a few minutes (`npx lighthouse https://<domain>/ …`).
-4. Keep Compatibility CSP (`script-src` with `'unsafe-inline'`, no hashes) while any challenge injectors remain (see §2.2.1).
+4. Keep **Strict CSP** (no `script-src 'unsafe-inline'`) for SecurityHeaders **A+**. Only use Compatibility CSP as a temporary waiver if challenges cannot be disabled (see §2.2.1) — that waiver **fails** the A+ SecurityHeaders gate until Strict is restored.
 
-If security policy requires challenges to stay on, accept lab BP/TBT noise as **environment-owned**, document it in the site’s launch notes, and gate on: zero site CSP errors, a11y 100, SEO 100, LCP/CLS green, and field CWV.
+If security policy requires challenges to stay on, accept lab BP/TBT noise as **environment-owned**, document it in the site’s launch notes, and gate on: zero site CSP errors, SecurityHeaders A+ when Strict CSP is possible, a11y 100, SEO 100, LCP/CLS green, and field CWV.
 
 #### H. Gate commands (live domain)
 
@@ -1370,7 +1550,9 @@ Use this exact runbook for static marketing/ecommerce sites to prevent partial i
 
 #### 5.3.3.2a `llms.txt` for agentic browsing (Mandatory on every site — never skip)
 
-**Non-negotiable.** Ship a root **`/llms.txt` on day one of every new site**, and keep it updated forever. AI agents, PageSpeed “Agentic Browsing,” and future ranking/discovery systems use this file. A site without a valid `llms.txt` is **not launch-ready**, even if Lighthouse is 100/100.
+**Non-negotiable.** Ship a root **`/llms.txt` on day one of every new site**, and keep it updated forever. AI agents, PageSpeed “Agentic Browsing,” ChatGPT/Claude/Gemini/Copilot/Perplexity-class tools, and future ranking/discovery systems use this file and the pages it maps. A site without a valid `llms.txt` is **not launch-ready**, even if Lighthouse is 100/100.
+
+**Broader AI authority rules (content, FAQs, citation-ready writing, nav, indexing):** see **§3.7**. `llms.txt` is the machine map; §3.7 is the full strategy to get AI to **recommend our sites** when users ask relevant questions.
 
 This is a Markdown plain-text file (not HTML). Spec spirit: [llmstxt.org](https://llmstxt.org/).
 
@@ -1450,9 +1632,9 @@ curl -sL https://<canonical-domain>/llms.txt | head -20
 - If schema references fragment IDs (for example `#product-id`), those IDs must exist in the HTML.
 
 #### 5.3.3.4 Internal Links for Discovery
-- Homepage must link to high-value secondary pages (FAQ, learning hub/blog, and core commercial pages).
+- Homepage must link to high-value secondary pages (FAQ, **problem-domain / authority FAQ**, learning hub/blog, and core commercial pages).
 - Blog index must link to all posts.
-- Important revenue pages must be reachable in 1-2 clicks from top-level navigation or homepage sections.
+- Important revenue pages **and AI-authority pages** must be reachable in 1-2 clicks from top-level navigation or homepage sections (see §3.7.3).
 
 #### 5.3.3.5 GA4 Coverage Rule
 - GA4 loader must run on all indexable pages, including blog pages.
@@ -1631,19 +1813,20 @@ These patterns are derived from working production sites (revengeworks.com et al
 #### 5.5.2 Hero Section — Mobile Rules
 ```css
 .hero {
-  /* Desktop: extra bottom padding to clear absolutely-positioned overlays */
-  padding: 3.5rem 1.5rem 8rem;
+  /* Compact density — see §4.2. Do not add multi-rem empty padding to clear overlays. */
+  padding: 2.5rem 1.25rem 2.75rem;
   position: relative; overflow: hidden;
 }
 @media (max-width: 768px) {
-  .hero { padding: 2.5rem 1.25rem 3rem; }
+  .hero { padding: 1.75rem 1.25rem 2rem; }
 }
 ```
 
 **Hard rules:**
-1. **Never embed `position: absolute` children that require large padding to avoid overlap.** Testimonial strips, badge rows, trust cards — put them as a *separate section below the hero*, not inside it. On mobile, absolutely positioned elements always become layout liabilities (either they overlap content or, when converted to `position: static` in a media query, they bloat the hero to 1000+ px tall).
+1. **Never embed `position: absolute` children that require large padding to avoid overlap.** Testimonial strips, badge rows, trust cards — put them as a *separate section below the hero*, not inside it. On mobile, absolutely positioned elements always become layout liabilities (either they overlap content or, when converted to `position: static` in a media query, they bloat the hero to 1000+ px tall). **Do not “solve” overlay clearance with 6–8rem bottom padding** — that violates §4.2.
 2. **Never use `position: static` as a mobile fallback for an element that was `position: absolute`.** If you need to show trust content on mobile, duplicate it outside the hero in a dedicated `<section>`.
 3. **Hero image columns with `minmax(520px, 1fr)`** will overflow at any mobile viewport. Use `minmax(min(100%, 520px), 1fr)` and confirm the grid collapses to 1 column at 768px.
+4. Hero vertical padding follows **§4.2 Vertical Spacing Density** (compact, scannable).
 
 #### 5.5.3 Grid Columns — Safe Pattern
 ```css
@@ -1726,6 +1909,6 @@ Playwright is the first-pass QA tool; real-device testing is the required final 
 
 **Final Mandate**: Every line of code, every piece of content, every configuration must contribute to **WCAG perfection**, **military-grade security**, and **unbeatable SEO**. No compromises. Sites built to this standard will rank #1, convert at industry-leading rates, and serve every user equitably while withstanding sophisticated attacks.
 
-**Version**: 2026.07 | **Last Reviewed**: July 21, 2026 (AGENTS.md standard) | **Next Review**: Quarterly or after major Google/Core updates.
+**Version**: 2026.08 | **Last Reviewed**: August 5, 2026 (AGENTS.md Commands/Boundaries/Security) | **Next Review**: Quarterly or after major Google/Core updates.
 
 *This guide is living — update immediately when Google, W3C, or security standards evolve.*
