@@ -210,7 +210,7 @@ Security is foundational. We build "secure by design" with defense-in-depth. No 
 ### 2.2 Headers & Browser Protections (CSP Required)
 Implement these response headers on **every** page/response:
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted-cdn.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.example.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';
+Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted-cdn.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.example.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
 Referrer-Policy: strict-origin-when-cross-origin
@@ -221,11 +221,26 @@ Cross-Origin-Embedder-Policy: require-corp (for isolation where needed)
 Access-Control-Allow-Origin: https://your-canonical-domain.com
 Vary: Origin
 ```
-- Use `nonce` or hashes for inline scripts/styles to avoid `'unsafe-inline'` where possible.
-- Regularly audit and tighten CSP.
+- **SecurityHeaders.com A+ (launch gate):** `script-src` must **not** include `'unsafe-inline'` or `'unsafe-eval'`. That single keyword is the most common reason this network’s sites scan as **grade A (capped)** instead of **A+**. Fix day one — do not ship Compatibility CSP as the default.
+- `style-src 'unsafe-inline'` is still allowed for practical CSS and does **not** by itself cap SecurityHeaders at A (unlike `script-src`).
+- Prefer external JS over nonces/hashes. Do **not** add script hashes/nonces on Cloudflare-hosted sites unless you fully control every injector on the live response.
+- Regularly audit and tighten CSP after deploy (`curl -sI` + SecurityHeaders.com rescan).
+
+#### 2.2.0 SecurityHeaders.com A+ — day-one CSP (do not reinvent)
+**Target grade: A+.** Anything less is a defect until fixed or explicitly waived.
+
+| Requirement | Rule |
+|-------------|------|
+| `script-src` | `'self'` + only required third-party script hosts (e.g. Stripe, GA, Cloudflare Insights). **Never** `'unsafe-inline'` or `'unsafe-eval'` in the default / production CSP. |
+| Site-authored JS | All executable JS in external `/assets/js/*.js` files. Only allowed inline `<script>` in HTML source: `type="application/ld+json"`. |
+| Handlers | No `onclick=` / `onsubmit=` / other `on*=` attributes; no `javascript:` URLs. |
+| `object-src` | Include `object-src 'none'`. |
+| Verify | After every headers change: rescan https://securityheaders.com/?q=https://\<canonical\>/ and confirm **A+** with no “Grade capped at A” warning about `script-src 'unsafe-inline'`. |
+
+**Why we keep hitting this:** agents add inline GA snippets, cart analytics, or newsletter `onsubmit=` and then re-add `'unsafe-inline'` to “make it work.” That is wrong. Externalize the script; keep strict CSP.
 
 #### 2.2.1 CSP — `script-src 'self'` blocks ALL inline `<script>` (including event handlers)
-Our standard CSP omits `'unsafe-inline'` from `script-src`. This is correct and mandatory on this network. It also means any inline `<script>…</script>` block, any `onclick="…"`/`onsubmit="…"`/etc. attribute, and any `javascript:` URL is silently blocked by the browser in production. The page renders fine; the feature just does nothing. This is the #1 "works locally, dead in prod" gotcha.
+Our **default / A+** CSP omits `'unsafe-inline'` from `script-src`. This is correct and mandatory on this network. It also means any inline `<script>…</script>` block, any `onclick="…"`/`onsubmit="…"`/etc. attribute, and any `javascript:` URL is silently blocked by the browser in production. The page renders fine; the feature just does nothing. This is the #1 "works locally, dead in prod" gotcha.
 
 **Hard rule for site-authored JavaScript (every new site):**
 - Put **all** application JavaScript in external files (e.g. `/assets/js/<feature>.js`) and load with `<script src="…" defer></script>`.
@@ -242,15 +257,16 @@ Our standard CSP omits `'unsafe-inline'` from `script-src`. This is correct and 
 - A CSP of `script-src 'self'` **without** `'unsafe-inline'` will block the Challenge Platform inline bootstrap. Lighthouse then fails Best Practices with `errors-in-console` / Issues panel **Content security policy** — even when *our* source is clean.
 - If your `script-src` contains both `'unsafe-inline'` and script hashes/nonces, browsers **ignore** `'unsafe-inline'`, which still blocks Cloudflare-injected inline JS.
 - Use **one** strategy per environment:
-  1. **Strict CSP strategy:** no `'unsafe-inline'`; disable Challenge Platform JS injection and Email Address Obfuscation on normal public page traffic in the Cloudflare dashboard (Bot Fight / Scrape Shield). Prefer when the account can turn those injectors off.
-  2. **Compatibility strategy (default for Cloudflare Pages when challenges remain on):**  
+  1. **Strict CSP strategy (DEFAULT — required for SecurityHeaders A+):** no `'unsafe-inline'` in `script-src`; all site JS external. Disable Challenge Platform **JS injection** and Email Address Obfuscation on normal public page traffic in the Cloudflare dashboard (Bot Fight / Scrape Shield) when those injectors cause console CSP noise. Prefer this on every new and remodeled site.
+  2. **Compatibility strategy (EXCEPTION only — caps SecurityHeaders at grade A):**  
      `script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com;`  
-     **no** script hashes/nonces. Site JS stays external; `'unsafe-inline'` exists only so CF injectors do not fail Best Practices 100.
+     **no** script hashes/nonces. Site JS stays external; `'unsafe-inline'` exists only so CF injectors do not fail Lighthouse Best Practices. **Do not use this as the day-one default.** If you must use it temporarily, document the waiver and schedule a return to Strict CSP for A+.
 - Also allow Insights connect endpoints when Web Analytics is on:  
   `connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;`
 - Verify after deploy with:
-  - `curl -sI https://<canonical-domain>/ | grep -i content-security-policy`
-  - View source / DevTools Console on the **live** homepage — zero CSP red errors
+  - `curl -sI https://<canonical-domain>/ | grep -i content-security-policy` — confirm **no** `script-src … 'unsafe-inline'`
+  - https://securityheaders.com/ rescan → **A+**
+  - View source / DevTools Console on the **live** homepage — zero CSP red errors from **our** scripts
   - Lighthouse Best Practices on the live homepage in a clean browser
 
 **Standard implementation pattern:**
@@ -306,7 +322,7 @@ Cloudflare Pages (and many static hosts) default to `Access-Control-Allow-Origin
   Cross-Origin-Resource-Policy: same-site
   Access-Control-Allow-Origin: https://<canonical-domain>
   Vary: Origin
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; media-src 'self'; connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; media-src 'self'; connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
 
 /css/*
   Cache-Control: public, max-age=31536000, immutable
@@ -1230,17 +1246,18 @@ These appear in the network tree even when HTML never references them:
 
 #### C. CSP when Cloudflare Web Analytics and/or Challenge Platform are on
 
-**Day-one default for Cloudflare Pages** (Compatibility strategy — see §2.2.1):
+**Day-one default for Cloudflare Pages** (Strict / SecurityHeaders **A+** — see §2.2.0 and §2.2.1):
 
 ```
-script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com;
+script-src 'self' https://static.cloudflareinsights.com;
 connect-src 'self' https://cloudflareinsights.com https://*.cloudflareinsights.com;
 ```
 
-- `'unsafe-inline'` is required when Challenge Platform injects the live inline bootstrap (`window.__CF$cv$params`). Without it, Lighthouse Best Practices fails even if repo HTML has no inline scripts.
+- **No** `'unsafe-inline'` in `script-src` on the default path. SecurityHeaders.com caps the grade at **A** (not A+) when `script-src` contains `'unsafe-inline'`.
+- If Challenge Platform injects live inline bootstrap (`window.__CF$cv$params`) and causes console noise, **prefer turning off that injector** for normal public traffic rather than weakening CSP.
+- Compatibility CSP with `'unsafe-inline'` is an **exception** only (§2.2.1 strategy 2). It will **not** score SecurityHeaders A+.
 - **Never** combine `'unsafe-inline'` with script hashes/nonces.
 - Allowing the Insights host prevents false Best Practices failures when the beacon is **not** blocked by an extension.
-- Prefer Strict strategy only when the CF dashboard has challenge JS and email-decode injectors disabled on public HTML.
 
 #### D. Performance patterns that preserve 100 (mobile + desktop)
 
@@ -1303,9 +1320,9 @@ Live Lighthouse often shows **only** these as remaining blockers after the site 
 1. Cloudflare dashboard → **Security** → **Bots** (or Bot Fight Mode / Super Bot Fight Mode): turn **off** or relax **JavaScript Detections** for the marketing zone if threat model allows.
 2. **Scrape Shield** → **Email Address Obfuscation**: prefer **Off** on pure marketing sites (removes `email-decode.min.js` from the critical path). Use careful contact presentation if spam is a concern.
 3. Re-run Lighthouse **headless** after a few minutes (`npx lighthouse https://<domain>/ …`).
-4. Keep Compatibility CSP (`script-src` with `'unsafe-inline'`, no hashes) while any challenge injectors remain (see §2.2.1).
+4. Keep **Strict CSP** (no `script-src 'unsafe-inline'`) for SecurityHeaders **A+**. Only use Compatibility CSP as a temporary waiver if challenges cannot be disabled (see §2.2.1) — that waiver **fails** the A+ SecurityHeaders gate until Strict is restored.
 
-If security policy requires challenges to stay on, accept lab BP/TBT noise as **environment-owned**, document it in the site’s launch notes, and gate on: zero site CSP errors, a11y 100, SEO 100, LCP/CLS green, and field CWV.
+If security policy requires challenges to stay on, accept lab BP/TBT noise as **environment-owned**, document it in the site’s launch notes, and gate on: zero site CSP errors, SecurityHeaders A+ when Strict CSP is possible, a11y 100, SEO 100, LCP/CLS green, and field CWV.
 
 #### H. Gate commands (live domain)
 
